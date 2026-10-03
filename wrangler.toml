@@ -6,3 +6,4 @@ pages_build_output_dir = "."
 binding = "DB"
 database_name = "jeswin-portfolio-db"
 database_id = "31d3759e-1b5d-4c1c-94a1-fd94341b692e"
+# Cloudflare D1 binding configured
