@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b0b0d">
+<title>Jeswin — Portfolio CMS</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#0b0b0d;color:#fff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}button,input,textarea,select{font:inherit}button{cursor:pointer}.wrap{max-width:1050px;margin:auto;padding:24px}.top{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:24px}.brand{font-weight:900;letter-spacing:3px}.muted{color:#929299}.panel{background:#141417;border:1px solid #28282d;border-radius:20px;padding:20px;margin-bottom:18px}.hidden{display:none!important}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.field{display:flex;flex-direction:column;gap:7px}.field.full{grid-column:1/-1}.field label{font-size:12px;color:#999;text-transform:uppercase;letter-spacing:1px}.field input,.field textarea,.field select{width:100%;border:1px solid #33343a;background:#0e0e10;color:#fff;border-radius:11px;padding:12px;outline:0}.field textarea{min-height:90px;resize:vertical}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}.btn{border:1px solid #3a3a40;background:#1b1b20;color:#fff;border-radius:11px;padding:11px 15px}.btn.primary{background:#fff;color:#000;border-color:#fff}.btn.danger{color:#ff8e8e}.projects{display:grid;gap:12px}.row{display:grid;grid-template-columns:110px 1fr auto;gap:15px;align-items:center;border:1px solid #29292e;background:#111114;border-radius:15px;padding:12px}.thumb{width:110px;height:80px;border-radius:10px;object-fit:cover;background:#202024}.meta h3{margin:0 0 5px;font-size:16px}.meta p{margin:0;color:#888;font-size:13px}.badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}.badge{font-size:10px;padding:5px 7px;border-radius:999px;background:#222228;color:#aaa}.badge.live{color:#9ff1b1}.login{max-width:420px;margin:15vh auto}.status{margin-top:12px;padding:11px;border-radius:10px;background:#202024;color:#aaa}.status.ok{background:#12341e;color:#9ff1b1}.status.err{background:#3a1717;color:#ff9b9b}.check{display:flex;gap:8px;align-items:center;color:#aaa;font-size:13px;margin-top:10px}@media(max-width:700px){.grid{grid-template-columns:1fr}.field.full{grid-column:auto}.row{grid-template-columns:80px 1fr}.row .row-actions{grid-column:1/-1}.thumb{width:80px;height:64px}.wrap{padding:16px}}
+</style>
+</head>
+<body>
+<div id="login" class="login panel">
+  <div class="brand">JE.</div><h1>Portfolio CMS</h1><p class="muted">Private admin panel.</p>
+  <div class="field"><label>Password</label><input id="password" type="password" autocomplete="current-password" placeholder="Admin password"></div>
+  <div class="actions"><button class="btn primary" id="loginBtn">Sign in</button></div><div id="loginStatus" class="status hidden"></div>
+</div>
+
+<div id="app" class="wrap hidden">
+  <div class="top"><div><div class="brand">JE.</div><h1 style="margin:7px 0 0">Portfolio CMS</h1><div class="muted">Add, edit, publish, reorder and delete work.</div></div><button class="btn" id="logoutBtn">Log out</button></div>
+  <div class="panel">
+    <h2 id="formTitle" style="margin-top:0">Add new work</h2>
+    <form id="projectForm">
+      <input id="id" type="hidden">
+      <div class="grid">
+        <div class="field"><label>Title *</label><input id="title" required placeholder="Operation Toofan"></div>
+        <div class="field"><label>Category</label><input id="category" placeholder="Poster Design"></div>
+        <div class="field"><label>Type</label><select id="type"><option value="graphic">Graphic</option><option value="video">Video</option></select></div>
+        <div class="field"><label>Client</label><input id="client" placeholder="Optional"></div>
+        <div class="field full"><label>Google Drive / Media URL *</label><input id="mediaUrl" required placeholder="Paste Drive link or direct media URL"></div>
+        <div class="field full"><label>Custom thumbnail URL</label><input id="thumbnailUrl" placeholder="Optional — Drive links get an automatic thumbnail"></div>
+        <div class="field full"><label>Description</label><textarea id="description" placeholder="Short project description"></textarea></div>
+        <div class="field"><label>Tags</label><input id="tags" placeholder="poster, onam, branding"></div>
+        <div class="field"><label>Project date</label><input id="projectDate" type="date"></div>
+        <div class="field"><label>Sort order</label><input id="sortOrder" type="number" value="0"></div>
+        <div class="field"><label>Visibility</label><select id="published"><option value="1">Published</option><option value="0">Draft</option></select></div>
+      </div>
+      <label class="check"><input id="featured" type="checkbox"> Featured project</label>
+      <div class="actions"><button class="btn primary" type="submit" id="saveBtn">Publish work</button><button class="btn hidden" type="button" id="cancelBtn">Cancel edit</button></div>
+      <div id="formStatus" class="status hidden"></div>
+    </form>
+  </div>
+  <div class="panel"><div class="top" style="margin-bottom:12px"><div><h2 style="margin:0">Your work</h2><div class="muted" id="count"></div></div><button class="btn" id="refreshBtn">Refresh</button></div><div id="projects" class="projects"></div></div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+let items=[];
+function msg(el,text,kind=""){el.textContent=text;el.className="status"+(kind?" "+kind:"");el.classList.remove("hidden")}
+async function api(url,opts={}){const r=await fetch(url,{...opts,headers:{"Content-Type":"application/json",...(opts.headers||{})}});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||"Request failed");return d}
+async function check(){const d=await api("/api/auth"); if(d.ok){$("login").classList.add("hidden");$("app").classList.remove("hidden");await load()}}
+$("loginBtn").onclick=async()=>{try{await api("/api/auth",{method:"POST",body:JSON.stringify({password:$("password").value})});await check()}catch(e){msg($("loginStatus"),e.message,"err")}};
+$("password").addEventListener("keydown",e=>{if(e.key==="Enter")$("loginBtn").click()});
+$("logoutBtn").onclick=async()=>{await fetch("/api/auth",{method:"DELETE"});location.reload()};
+async function load(){items=await api("/api/admin/projects");$("count").textContent=`${items.length} project${items.length===1?"":"s"}`;render()}
+function render(){const el=$("projects");el.innerHTML="";if(!items.length){el.innerHTML='<div class="muted">No work yet. Add your first project above.</div>';return}items.forEach(p=>{const row=document.createElement("div");row.className="row";const thumb=p.thumbnailUrl||p.mediaUrl;row.innerHTML=`<img class="thumb" src="${esc(thumb)}" onerror="this.style.opacity=.25"><div class="meta"><h3>${esc(p.title)}</h3><p>${esc(p.category||p.type)}${p.client?" · "+esc(p.client):""}</p><div class="badges"><span class="badge ${p.published?"live":""}">${p.published?"PUBLISHED":"DRAFT"}</span>${p.featured?'<span class="badge">FEATURED</span>':''}<span class="badge">Order ${p.sortOrder}</span></div></div><div class="row-actions actions"><button class="btn" onclick="edit(${p.id})">Edit</button><button class="btn danger" onclick="del(${p.id})">Delete</button></div>`;el.appendChild(row)})}
+function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
+function fill(p){["id","title","category","type","client","mediaUrl","thumbnailUrl","description","tags","projectDate","sortOrder"].forEach(k=>$(k).value=p[k]??"");$("published").value=p.published?"1":"0";$("featured").checked=!!p.featured;$("formTitle").textContent="Edit work";$("saveBtn").textContent="Save changes";$("cancelBtn").classList.remove("hidden");window.scrollTo({top:0,behavior:"smooth"})}
+window.edit=id=>fill(items.find(x=>x.id===id));
+window.del=async id=>{const p=items.find(x=>x.id===id);if(!p||!confirm(`Delete “${p.title}” from the portfolio?`))return;try{await api("/api/admin/projects?id="+id,{method:"DELETE"});await load()}catch(e){alert(e.message)}};
+$("cancelBtn").onclick=()=>{ $("projectForm").reset();$("id").value="";$("sortOrder").value=0;$("formTitle").textContent="Add new work";$("saveBtn").textContent="Publish work";$("cancelBtn").classList.add("hidden");$("formStatus").classList.add("hidden")};
+$("projectForm").onsubmit=async e=>{e.preventDefault();const body={id:Number($("id").value)||undefined,title:$("title").value,category:$("category").value,type:$("type").value,client:$("client").value,mediaUrl:$("mediaUrl").value,thumbnailUrl:$("thumbnailUrl").value,description:$("description").value,tags:$("tags").value,projectDate:$("projectDate").value,sortOrder:Number($("sortOrder").value||0),published:$("published").value==="1",featured:$("featured").checked};try{const editMode=!!body.id;await api("/api/admin/projects",{method:editMode?"PUT":"POST",body:JSON.stringify(body)});msg($("formStatus"),editMode?"Saved successfully.":"Work added successfully.","ok");$("cancelBtn").click();await load()}catch(e){msg($("formStatus"),e.message,"err")}};
+$("refreshBtn").onclick=load;
+check().catch(()=>{});
+</script>
+</body></html>

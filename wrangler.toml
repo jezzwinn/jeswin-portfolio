@@ -1,0 +1,10 @@
+name = "jeswin-portfolio"
+compatibility_date = "2026-10-03"
+pages_build_output_dir = "."
+
+# Optional for CLI deployments.
+# If you use the Cloudflare dashboard, bind D1 there instead.
+# [[d1_databases]]
+# binding = "DB"
+# database_name = "jeswin-portfolio-db"
+# database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
